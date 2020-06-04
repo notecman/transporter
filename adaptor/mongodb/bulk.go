@@ -104,7 +104,6 @@ func (b *Bulk) run(done chan struct{}, wg *sync.WaitGroup) {
 		case <-time.After(2 * time.Second):
 			if err := b.flushAll(); err != nil {
 				log.Errorf("flush error, %s", err)
-				return
 			}
 		case <-done:
 			log.Debugln("received done channel")
@@ -120,6 +119,7 @@ func (b *Bulk) flushAll() error {
 	b.Lock()
 	for c, bOp := range b.bulkMap {
 		if err := b.flush(c, bOp); err != nil {
+      b.Unlock()
 			return err
 		}
 	}
