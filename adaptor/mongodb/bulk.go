@@ -71,6 +71,9 @@ func (b *Bulk) Write(msg message.Msg) func(client.Session) (message.Msg, error) 
 		// if the next op is going to put us over, flush and recreate bOp
 		if bOp.opCounter >= maxObjSize || bOp.bsonOpSize+msgSize >= maxBSONObjSize {
 			err = b.flush(coll, bOp)
+			if err != nil {
+				log.With("collection", coll).Infof("error flushing collection that has reached its size capacity: %s\n", err.Error())
+			}
 			if err == nil && b.confirmChan != nil {
 				b.confirmChan <- struct{}{}
 			}
@@ -119,7 +122,7 @@ func (b *Bulk) flushAll() error {
 	b.Lock()
 	for c, bOp := range b.bulkMap {
 		if err := b.flush(c, bOp); err != nil {
-      b.Unlock()
+			b.Unlock()
 			return err
 		}
 	}
